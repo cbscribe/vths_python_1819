@@ -15,7 +15,7 @@ clock = pygame.time.Clock()
 mario_img = pygame.image.load("Downloads/mario_right.png")
 mario_img = pygame.transform.rotozoom(mario_img, 0, 0.2)
 mario_left = pygame.transform.flip(mario_img, True, False)
-
+block_img = pygame.image.load("Downloads/grass_main_32x32.png")
 class Player(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__(all_sprites)
@@ -54,9 +54,22 @@ class Player(pygame.sprite.Sprite):
 class Platform(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__(all_sprites, platforms)
-        self.image = pygame.Surface((32, 32))
-        self.image.fill( (14, 183, 63) )
+        self.image = block_img#pygame.Surface((32, 32))
+        #self.image.fill( (14, 183, 63) )
         self.rect = self.image.get_rect(topleft=(x, y))
+
+class Camera:
+    def __init__(self, width, height):
+        self.width = width
+        self.height = height
+        self.camera = pygame.Rect(0, 0, width, height)
+    def update(self, target):
+        x = -target.rect.centerx + int(WIDTH/2)
+        y = -target.rect.centery + int(HEIGHT/2)
+        y = max(HEIGHT-self.height, y)
+        self.camera = pygame.Rect(x, y, self.width, self.height)
+    def apply(self, item):
+        return item.rect.move(self.camera.topleft)
 
 all_sprites = pygame.sprite.Group()
 platforms = pygame.sprite.Group()
@@ -73,13 +86,17 @@ for row, items in enumerate(level):
             Platform(col*32, row*32)
         if item == "$":
             player = Player(col*32, row*32)
-    
+camera = Camera(len(level[0])*32, len(level)*32)
+
 running = True
 while running:
     clock.tick(FPS)
     for event in pygame.event.get():
         if event.type == pygame.QUIT: pygame.quit()
     all_sprites.update()
+    camera.update(player)
     screen.fill((104, 229, 255))
-    all_sprites.draw(screen)
+    #all_sprites.draw(screen)
+    for sprite in all_sprites:
+        screen.blit(sprite.image, camera.apply(sprite))
     pygame.display.flip()

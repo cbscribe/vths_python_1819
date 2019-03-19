@@ -20,6 +20,8 @@ block_img = pygame.image.load("Downloads/grass_main_32x32.png")
 block_img = pygame.transform.scale(block_img, (32, 32))
 coin_img = pygame.image.load("Downloads/coin.png")
 coin_img = pygame.transform.scale(coin_img, (30, 30))
+coin_sound = pygame.mixer.Sound("Downloads/smw_coin.wav")
+jump_sound = pygame.mixer.Sound("Downloads/smw_jump.wav")
 
 class Coin(pygame.sprite.Sprite):
     def __init__(self, x, y):
@@ -40,6 +42,7 @@ class Player(pygame.sprite.Sprite):
         hits = pygame.sprite.spritecollide(self, platforms, False)
         self.rect.y -= 1
         if hits:
+            jump_sound.play()
             self.vy = JUMP_SPEED
             
     def update(self):
@@ -106,6 +109,10 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT: pygame.quit()
     all_sprites.update()
+    # pick up coins
+    coin_hits = pygame.sprite.spritecollide(player, coins, True)
+    for coin in coin_hits:
+        coin_sound.play()
     camera.update(player)
     screen.fill((104, 229, 255))
     #all_sprites.draw(screen)

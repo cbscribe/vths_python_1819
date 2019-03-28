@@ -33,6 +33,19 @@ class Mob(pygame.sprite.Sprite):
         super().__init__(all_sprites, mobs)
         self.image = goomba_img
         self.rect = self.image.get_rect(topleft=(x, y))
+        self.vx, self.vy = -1, 0
+    def update(self):
+        self.vy += GRAVITY
+        self.rect.x += self.vx
+        self.rect.y += self.vy
+        if self.vy > 0:
+            hits = pygame.sprite.spritecollide(self, platforms, False)
+            if hits:
+                self.vy = 0
+                self.rect.bottom  = hits[0].rect.top
+        # delete if it falls off the world
+        if self.rect.y > 1000:
+            self.kill()
         
 class Coin(pygame.sprite.Sprite):
     def __init__(self, x, y):
@@ -122,6 +135,16 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT: pygame.quit()
     all_sprites.update()
+    
+    # hitting mobs
+    mob_hits = pygame.sprite.spritecollide(player, mobs, False)
+    if mob_hits:
+        if player.rect.bottom < mob_hits[0].rect.centery:
+            mob_hits[0].kill()
+            player.vy = JUMP_SPEED / 2
+        else:
+            pygame.quit()
+    
     # pick up coins
     coin_hits = pygame.sprite.spritecollide(player, coins, True)
     #for coin in coin_hits:

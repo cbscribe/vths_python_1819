@@ -6,7 +6,7 @@ WIDTH = 800
 HEIGHT = 640
 FPS = 60
 GRAVITY = 2
-RUN_SPEED = 8
+RUN_SPEED = 9
 JUMP_SPEED = -30
 
 pygame.init()
@@ -14,7 +14,7 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
 
 mario_img = pygame.image.load("Downloads/mario_right.png")
-mario_img = pygame.transform.rotozoom(mario_img, 0, 0.2)
+mario_img = pygame.transform.rotozoom(mario_img, 0, 0.15)
 mario_left = pygame.transform.flip(mario_img, True, False)
 block_img = pygame.image.load("Downloads/grass_main_32x32.png")
 # to resize
@@ -25,14 +25,12 @@ coin_img = pygame.transform.scale(coin_img, (30, 30))
 goomba_img = pygame.image.load("Downloads/goomba.png")
 goomba_img = pygame.transform.rotozoom(goomba_img, 0, 0.2)
 
-mframes = pygame.image.load("Downloads/m_walk.png")
+m_frames = pygame.image.load("Downloads/m_walk.png")
 frames_list = []
 for i in range(7):
-    frames_list.append(mframes.subsurface(pygame.Rect(i*60,
-                        0, 60, 95)))
+    frames_list.append(m_frames.subsurface(pygame.Rect(i*60, 0, 60, 95)))
 m_start = frames_list[0]
-mframes = cycle(frames_list)
-
+m_frames = cycle(frames_list)
 # sounds
 #coin_sound = pygame.mixer.Sound("Downloads/smw_coin.wav")
 #jump_sound = pygame.mixer.Sound("Downloads/smw_jump.wav")
@@ -65,20 +63,12 @@ class Coin(pygame.sprite.Sprite):
 class Player(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__(all_sprites)
-        self.image = mario_img #pygame.Surface((32, 64))
+        self.image = m_start#mario_img #pygame.Surface((32, 64))
         #self.image.fill((250, 250, 50))
         self.rect = self.image.get_rect(topleft=(x, y))
         self.vy = 0
         self.last_update = 0
-    
-    def animate(self):
-        now = pygame.time.get_ticks()
-        if now - self.last_update > 50: # animation speed
-            self.last_update = now
-            self.image = next(mframes)
-            if self.vx < 0:
-                self.image = pygame.transform.flip(self.image, True, False)
-            
+        
     def jump(self):
         self.rect.y += 1
         hits = pygame.sprite.spritecollide(self, platforms, False)
@@ -86,6 +76,14 @@ class Player(pygame.sprite.Sprite):
         if hits:
             #jump_sound.play()
             self.vy = JUMP_SPEED
+            
+    def animate(self):
+        now = pygame.time.get_ticks()
+        if now - self.last_update > 50:
+            self.last_update = now
+            self.image = next(m_frames)
+            if self.vx < 0:
+                self.image = pygame.transform.flip(self.image, True, False)
             
     def update(self):
         self.vx = 0
@@ -105,11 +103,18 @@ class Player(pygame.sprite.Sprite):
             self.image = m_start
         self.rect.x += self.vx
         self.rect.y += self.vy
-        if self.vy > 0:
-            hits = pygame.sprite.spritecollide(self, platforms, False)
-            if hits:
-                self.vy = 0
+        # if self.vy > 0:
+#             hits = pygame.sprite.spritecollide(self, platforms, False)
+#             if hits:
+#                 self.vy = 0
+#                 self.rect.bottom = hits[0].rect.top
+        hits = pygame.sprite.spritecollide(self, platforms, False)
+        if hits:
+            if self.rect.centery < hits[0].rect.centery:
                 self.rect.bottom = hits[0].rect.top
+            if self.rect.centery >= hits[0].rect.centery:
+                self.rect.top = hits[0].rect.bottom
+            self.vy = 0
 
 class Platform(pygame.sprite.Sprite):
     def __init__(self, x, y):

@@ -79,7 +79,7 @@ class Player(pygame.sprite.Sprite):
             
     def animate(self):
         now = pygame.time.get_ticks()
-        if now - self.last_update > 50:
+        if now - self.last_update > 50: # frame rate
             self.last_update = now
             self.image = next(m_frames)
             if self.vx < 0:

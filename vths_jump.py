@@ -65,7 +65,7 @@ class Coin(pygame.sprite.Sprite):
 class Player(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__(all_sprites)
-        self.image = mario_img #pygame.Surface((32, 64))
+        self.image = m_start #pygame.Surface((32, 64))
         #self.image.fill((250, 250, 50))
         self.rect = self.image.get_rect(topleft=(x, y))
         self.vy = 0
@@ -104,12 +104,25 @@ class Player(pygame.sprite.Sprite):
         else:
             self.image = m_start
         self.rect.x += self.vx
+
+        hits = pygame.sprite.spritecollide(self, platforms, False)
+        if hits:
+            if self.rect.centerx < hits[0].rect.centerx:
+                self.rect.right = hits[0].rect.left
+            if self.rect.centerx > hits[0].rect.centerx:
+                self.rect.left = hits[0].rect.right
+            self.vx = 0
+
         self.rect.y += self.vy
-        if self.vy > 0:
-            hits = pygame.sprite.spritecollide(self, platforms, False)
-            if hits:
-                self.vy = 0
+        #if self.vy > 0:
+        hits = pygame.sprite.spritecollide(self, platforms, False)
+        if hits:
+            if self.rect.centery < hits[0].rect.centery:
                 self.rect.bottom = hits[0].rect.top
+            if self.rect.centery > hits[0].rect.centery:
+                self.rect.top = hits[0].rect.bottom
+            self.vy = 0
+            #self.rect.bottom = hits[0].rect.top
 
 class Platform(pygame.sprite.Sprite):
     def __init__(self, x, y):

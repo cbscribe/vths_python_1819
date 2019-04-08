@@ -37,6 +37,12 @@ mframes = cycle(frames_list)
 #coin_sound = pygame.mixer.Sound("Downloads/smw_coin.wav")
 #jump_sound = pygame.mixer.Sound("Downloads/smw_jump.wav")
 
+def draw_text(text, size, color, x, y):
+    font = pygame.font.Font(None, size)
+    text_surface = font.render(text, True, color)
+    text_rect = text_surface.get_rect(center=(x, y))
+    screen.blit(text_surface, text_rect)
+
 class Mob(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__(all_sprites, mobs)
@@ -65,8 +71,7 @@ class Coin(pygame.sprite.Sprite):
 class Player(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__(all_sprites)
-        self.image = m_start #pygame.Surface((32, 64))
-        #self.image.fill((250, 250, 50))
+        self.image = m_start
         self.rect = self.image.get_rect(topleft=(x, y))
         self.vy = 0
         self.last_update = 0
@@ -95,10 +100,8 @@ class Player(pygame.sprite.Sprite):
             self.jump()
         if keys[pygame.K_RIGHT]:
             self.vx += RUN_SPEED
-            #self.image = mario_img
         if keys[pygame.K_LEFT]:
             self.vx -= RUN_SPEED
-            #self.image = mario_left
         if self.vx != 0:
             self.animate()
         else:
@@ -114,7 +117,6 @@ class Player(pygame.sprite.Sprite):
             self.vx = 0
 
         self.rect.y += self.vy
-        #if self.vy > 0:
         hits = pygame.sprite.spritecollide(self, platforms, False)
         if hits:
             if self.rect.centery < hits[0].rect.centery:
@@ -122,7 +124,6 @@ class Player(pygame.sprite.Sprite):
             if self.rect.centery > hits[0].rect.centery:
                 self.rect.top = hits[0].rect.bottom
             self.vy = 0
-            #self.rect.bottom = hits[0].rect.top
 
 class Platform(pygame.sprite.Sprite):
     def __init__(self, x, y):
@@ -163,7 +164,7 @@ for row, items in enumerate(level):
         if item == "m":
             Mob(col*32, row*32)
 camera = Camera(len(level[0])*32, len(level)*32)
-
+score = 0
 running = True
 while running:
     clock.tick(FPS)
@@ -186,11 +187,14 @@ while running:
         
     # pick up coins
     coin_hits = pygame.sprite.spritecollide(player, coins, True)
-    #for coin in coin_hits:
+    for coin in coin_hits:
+        score += 1
         #coin_sound.play()
     camera.update(player)
     screen.fill((104, 229, 255))
     #all_sprites.draw(screen)
     for sprite in all_sprites:
         screen.blit(sprite.image, camera.apply(sprite))
+    draw_text(str(score), 60, (40, 40, 40), WIDTH/2+4, 20+4) # shadow
+    draw_text(str(score), 60, (255, 255, 255), WIDTH/2, 20)
     pygame.display.flip()

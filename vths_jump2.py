@@ -2,9 +2,6 @@ import pygame
 import random
 from itertools import cycle
 
-def lerp(a, b, t) :
-  return a + (b - a) * t
-  
 WIDTH = 800
 HEIGHT = 640
 FPS = 60
@@ -77,9 +74,7 @@ class Player(pygame.sprite.Sprite):
         self.image = m_start
         self.rect = self.image.get_rect(topleft=(x, y))
         self.vy = 0
-        self.vx = 0
         self.last_update = 0
-        self.facing_left = True
     
     def animate(self):
         now = pygame.time.get_ticks()
@@ -98,22 +93,19 @@ class Player(pygame.sprite.Sprite):
             self.vy = JUMP_SPEED
             
     def update(self):
-        self.vx = lerp(self.vx, 0, 0.1)
-        if abs(self.vx) < 1: self.vx = 0
+        self.vx = 0
         self.vy += GRAVITY
         keys = pygame.key.get_pressed()
         if keys[pygame.K_SPACE]:
             self.jump()
         if keys[pygame.K_RIGHT]:
-            self.vx = RUN_SPEED
-            self.facing_left = False
+            self.vx += RUN_SPEED
         if keys[pygame.K_LEFT]:
-            self.vx = -RUN_SPEED
-            self.facing_left = True
+            self.vx -= RUN_SPEED
         if self.vx != 0:
             self.animate()
         else:
-            self.image = pygame.transform.flip(m_start, self.facing_left, False)
+            self.image = m_start
         self.rect.x += self.vx
 
         hits = pygame.sprite.spritecollide(self, platforms, False)

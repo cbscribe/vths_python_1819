@@ -11,7 +11,9 @@ FPS = 60
 GRAVITY = 2
 RUN_SPEED = 8
 JUMP_SPEED = -30
+FRICTION = 0.1
 
+pygame.mixer.pre_init(44100, -16, 2, 512)
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
@@ -37,8 +39,8 @@ m_start = frames_list[0]
 mframes = cycle(frames_list)
 
 # sounds
-#coin_sound = pygame.mixer.Sound("Downloads/smw_coin.wav")
-#jump_sound = pygame.mixer.Sound("Downloads/smw_jump.wav")
+coin_sound = pygame.mixer.Sound("Downloads/smw_coin.wav")
+jump_sound = pygame.mixer.Sound("Downloads/smw_jump.wav")
 
 def draw_text(text, size, color, x, y):
     font = pygame.font.Font(None, size)
@@ -55,6 +57,10 @@ class Mob(pygame.sprite.Sprite):
     def update(self):
         self.vy += GRAVITY
         self.rect.x += self.vx
+        # bounce on platform sides
+        hits = pygame.sprite.spritecollide(self, platforms, False)
+        if hits:
+            self.vx *= -1
         self.rect.y += self.vy
         if self.vy > 0:
             hits = pygame.sprite.spritecollide(self, platforms, False)
@@ -94,11 +100,11 @@ class Player(pygame.sprite.Sprite):
         hits = pygame.sprite.spritecollide(self, platforms, False)
         self.rect.y -= 1
         if hits:
-            #jump_sound.play()
+            jump_sound.play()
             self.vy = JUMP_SPEED
             
     def update(self):
-        self.vx = lerp(self.vx, 0, 0.1)
+        self.vx = lerp(self.vx, 0, FRICTION)
         if abs(self.vx) < 1: self.vx = 0
         self.vy += GRAVITY
         keys = pygame.key.get_pressed()

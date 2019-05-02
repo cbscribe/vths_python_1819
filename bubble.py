@@ -24,20 +24,42 @@ class Bubble(pg.sprite.Sprite):
         self.speed = 10
         self.color = color
         self.dir = dir
+        self.moving = True
     def draw(self):
         pg.draw.circle(screen, self.color, self.rect.center, BUBBLESIZE)
         pg.draw.circle(screen, (0, 0, 0), self.rect.center, BUBBLESIZE, 1)
     def update(self):
+        if not self.moving:
+            return
         self.rect.x += self.speed * math.cos(self.dir)
         self.rect.y += self.speed * -math.sin(self.dir)
         if self.rect.x < 0 or self.rect.x > WIDTH-BUBBLESIZE/2:
             self.dir = 3.14 - self.dir
+        hits = pg.sprite.spritecollide(self, bubbles, False)
+        for hit in hits:
+            if hit == self: break
+            self.moving = False
+
+class Board:
+    def __init__(self):
+        self.bubbles = [[None] * BOARDWIDTH for _ in range(BOARDHEIGHT)]
+        for row in range(5):
+            for col in range(BOARDWIDTH):
+                b = Bubble(random.choice(colors))
+                b.moving = False
+                b.rect.center = self.set_position(row, col)
+                self.bubbles[row][col] = b
+    def set_position(self, row, col):
+        x = BUBBLESIZE * 2 * col + 5 + BUBBLESIZE * (row % 2)
+        y = 20 + BUBBLESIZE * 2 * row - row * 5
+        return x, y
         
 class Arrow(pg.sprite.Sprite):
     def __init__(self):
         super().__init__()
         self.angle = 0
         self.arrow = pg.image.load("Downloads/Arrow.png")
+        self.arrow = pg.transform.rotozoom(self.arrow, 0, 1.0)
         self.image = self.arrow.copy()
         self.rect = self.image.get_rect()
         self.rect.center = (WIDTH/2, HEIGHT-30)
@@ -55,6 +77,7 @@ clock = pg.time.Clock()
 arrow = Arrow()
 nextcolor = random.choice(colors)
 bubbles = pg.sprite.Group()
+board = Board()
 score = 0
 while True:
     clock.tick(FPS)

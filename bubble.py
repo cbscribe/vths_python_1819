@@ -15,6 +15,8 @@ ORANGE = (255, 128, 0)
 PURPLE = (255, 0, 255)
 CYAN = (0, 255, 255)
 colors = [RED, GREEN, BLUE, YELLOW, ORANGE, PURPLE, CYAN]
+neighbor_positions = [[(1, 0), (0, 1), (-1, 1), (-1, 0), (-1, -1), (0, -1)],
+                      [(1, 0), (1, 1), (0, 1), (-1, 0), (0, -1), (1, -1)]]
 
 class Bubble(pg.sprite.Sprite):
     def __init__(self, color, dir=0):
@@ -25,9 +27,12 @@ class Bubble(pg.sprite.Sprite):
         self.color = color
         self.dir = dir
         self.moving = True
+        self.radius = BUBBLESIZE
+
     def draw(self):
         pg.draw.circle(screen, self.color, self.rect.center, BUBBLESIZE)
         pg.draw.circle(screen, (0, 0, 0), self.rect.center, BUBBLESIZE, 1)
+   
     def update(self):
         if not self.moving:
             return
@@ -35,10 +40,13 @@ class Bubble(pg.sprite.Sprite):
         self.rect.y += self.speed * -math.sin(self.dir)
         if self.rect.x < 0 or self.rect.x > WIDTH-BUBBLESIZE/2:
             self.dir = 3.14 - self.dir
-        hits = pg.sprite.spritecollide(self, bubbles, False)
+        hits = pg.sprite.spritecollide(self, bubbles, False,
+                                        pg.sprite.collide_circle)
         for hit in hits:
             if hit == self: break
             self.moving = False
+            board.add(self)
+            break
 
 class Board:
     def __init__(self):
@@ -49,10 +57,54 @@ class Board:
                 b.moving = False
                 b.rect.center = self.set_position(row, col)
                 self.bubbles[row][col] = b
+                b.row = row
+                b.col = col
+                
     def set_position(self, row, col):
         x = BUBBLESIZE * 2 * col + 5 + BUBBLESIZE * (row % 2)
         y = 20 + BUBBLESIZE * 2 * row - row * 5
         return x, y
+    def set_grid(self, x, y):
+        row = int((y - 20) / (BUBBLESIZE * 2 - 5))
+        col = int((x - 5 - BUBBLESIZE * (row % 2)) / (BUBBLESIZE * 2))
+        return row, col
+    def add(self, bubble):
+        y, x = self.set_grid(bubble.rect.centerx + BUBBLESIZE,
+                             bubble.rect.centery + BUBBLESIZE)
+        self.bubbles[y][x] = bubble
+        bubble.rect.center = self.set_position(y, x)
+        bubble.row = y
+        bubble.col = x
+        cluster = self.find_cluster(bubble, True, True)
+        print(cluster)
+        
+    def get_neighbors(self, b):
+        neighbors = []
+        for pos in neighbor_positions[b.row % 2]:
+            nx = b.col + pos[0]
+            ny = b.row + pos[1]
+            if nx >= 0 and nx < BOARDWIDTH and ny >= 0 and ny < BOARDHEIGHT:
+                if self.bubbles[ny][nx]:
+                    neighbors.append(self.bubbles[ny][nx])
+        return neighbors
+    def reset_state(self):
+        for bubble in bubbles: bubble.checked = False
+    def find_cluster(self, b, match_color, reset):
+        if reset: self.reset_state()
+        target = b
+        to_process = [target]
+        target.checked = True
+        cluster = []
+        while len(to_process) > 0:
+            current = to_process.pop()
+            if not current: continue
+            if not match_color or (current.color == target.color):
+                cluster.append(current)
+                for n in self.get_neighbors(current):
+                    if not n.checked:
+                        to_process.append(n)
+                        n.checked = True
+        return cluster
         
 class Arrow(pg.sprite.Sprite):
     def __init__(self):

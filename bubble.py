@@ -7,14 +7,14 @@ FPS = 60
 BUBBLESIZE = 20
 BOARDWIDTH = 16
 BOARDHEIGHT = 14
-RED      = (255, 0, 0)
-GREEN    = (0, 255, 0)
-BLUE = (0, 0, 255)
-YELLOW = (255, 255, 0)
+GREEN = (14, 183, 63)
+BLUE = (55, 121, 179)
+RED = (255, 84, 76)
+YELLOW = (221, 232, 63)
+PURPLE = (128, 0, 128)
 ORANGE = (255, 128, 0)
-PURPLE = (255, 0, 255)
 CYAN = (0, 255, 255)
-colors = [RED, GREEN, BLUE, YELLOW, ORANGE, PURPLE, CYAN]
+colors = [RED, GREEN, BLUE, YELLOW, CYAN, ORANGE]
 neighbor_positions = [[(1, 0), (0, 1), (-1, 1), (-1, 0), (-1, -1), (0, -1)],
                       [(1, 0), (1, 1), (0, 1), (-1, 0), (0, -1), (1, -1)]]
 
@@ -40,6 +40,8 @@ class Bubble(pg.sprite.Sprite):
         self.rect.y += self.speed * -math.sin(self.dir)
         if self.rect.x < 0 or self.rect.x > WIDTH-BUBBLESIZE/2:
             self.dir = 3.14 - self.dir
+        if self.rect.y <= 0:
+            board.add(self)
         hits = pg.sprite.spritecollide(self, bubbles, False,
                                         pg.sprite.collide_circle)
         for hit in hits:
@@ -64,10 +66,12 @@ class Board:
         x = BUBBLESIZE * 2 * col + 5 + BUBBLESIZE * (row % 2)
         y = 20 + BUBBLESIZE * 2 * row - row * 5
         return x, y
+        
     def set_grid(self, x, y):
         row = int((y - 20) / (BUBBLESIZE * 2 - 5))
         col = int((x - 5 - BUBBLESIZE * (row % 2)) / (BUBBLESIZE * 2))
         return row, col
+        
     def add(self, bubble):
         y, x = self.set_grid(bubble.rect.centerx + BUBBLESIZE,
                              bubble.rect.centery + BUBBLESIZE)
@@ -76,7 +80,15 @@ class Board:
         bubble.row = y
         bubble.col = x
         cluster = self.find_cluster(bubble, True, True)
-        print(cluster)
+        # print(cluster)
+        if len(cluster) >= 3:
+            for b in cluster:
+                self.bubbles[b.row][b.col] = None
+                b.kill()
+            for c in self.find_floaters():
+                for b in c:
+                    self.bubbles[b.row][b.col] = None
+                    b.kill()
         
     def get_neighbors(self, b):
         neighbors = []
@@ -87,8 +99,10 @@ class Board:
                 if self.bubbles[ny][nx]:
                     neighbors.append(self.bubbles[ny][nx])
         return neighbors
+        
     def reset_state(self):
         for bubble in bubbles: bubble.checked = False
+        
     def find_cluster(self, b, match_color, reset):
         if reset: self.reset_state()
         target = b
@@ -106,6 +120,24 @@ class Board:
                         n.checked = True
         return cluster
         
+    def find_floaters(self):
+        self.reset_state()
+        floaters = []
+        for row in range(BOARDHEIGHT):
+            for col in range(BOARDWIDTH):
+                b = self.bubbles[row][col]
+                if b and not b.checked:
+                    cluster = self.find_cluster(b, False, False)
+                    if len(cluster) <= 0: continue
+                    floating = True
+                    for tile in cluster:
+                        if tile.row == 0:
+                            floating = False
+                            break
+                    if floating:
+                        floaters.append(cluster)
+        return floaters
+                
 class Arrow(pg.sprite.Sprite):
     def __init__(self):
         super().__init__()
@@ -125,6 +157,7 @@ class Arrow(pg.sprite.Sprite):
 pg.init()
 screen = pg.display.set_mode((WIDTH, HEIGHT))
 clock = pg.time.Clock()
+pg.mouse.set_visible(False)
 
 arrow = Arrow()
 nextcolor = random.choice(colors)
@@ -135,7 +168,8 @@ while True:
     clock.tick(FPS)
     for event in pg.event.get():
         if event.type == pg.QUIT: pg.quit()
-        if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
+        #if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
+        if event.type == pg.MOUSEBUTTONDOWN:
             Bubble(nextcolor, arrow.angle)
             nextcolor = random.choice(colors)
     arrow.update()

@@ -29,7 +29,7 @@ class Paddle(pg.sprite.Sprite):
 
 class Ball(pg.sprite.Sprite):
     def __init__(self):
-        super().__init__(all_sprites)
+        super().__init__(all_sprites, balls)
         self.image = pg.Surface((BALL_SIZE, BALL_SIZE))
         self.image.fill((255, 255, 255))
         self.rect = self.image.get_rect()
@@ -39,6 +39,8 @@ class Ball(pg.sprite.Sprite):
         self.rect.center = self.pos
         self.trail = [] 
     def update(self):
+        if self.rect.y > HEIGHT:
+            self.kill()
         if len(self.trail) > TRAIL_LENGTH:
             del self.trail[0]
         self.trail.append(self.rect.center)
@@ -96,6 +98,7 @@ def spawn_bricks():
 
 all_sprites = pg.sprite.Group()
 bricks = pg.sprite.Group()
+balls = pg.sprite.Group()
 spawn_bricks()
 ball = Ball()
 paddle = Paddle()
@@ -103,28 +106,33 @@ while True:
     clock.tick(FPS)
     for event in pg.event.get():
         if event.type == pg.QUIT: pg.quit()
+        if event.type == pg.KEYDOWN and event.key == pg.K_SPACE: Ball()
     all_sprites.update()
     # bounce ball off paddle
-    paddle_hit = pg.sprite.collide_rect(paddle, ball)
-    if paddle_hit:
-        ball.vel.y *= -1
-        # ball.rect.bottom = paddle.rect.top
-        ball.pos.y = paddle.rect.top - BALL_SIZE/2
-        dist = ball.rect.centerx - paddle.rect.centerx
-        ball.vel.x = BALL_SPEED * dist * (1/25)
-        ball.vel = ball.vel.normalize() * BALL_SPEED
+    for ball in balls:
+        paddle_hit = pg.sprite.collide_rect(paddle, ball)
+        if paddle_hit:
+            ball.vel.y *= -1
+            # ball.rect.bottom = paddle.rect.top
+            ball.pos.y = paddle.rect.top - BALL_SIZE/2
+            dist = ball.rect.centerx - paddle.rect.centerx
+            ball.vel.x = BALL_SPEED * dist * (1/25)
+            ball.vel = ball.vel.normalize() * BALL_SPEED
     # bounce off bricks
-    brick_hits = pg.sprite.spritecollide(ball, bricks, False)
-    for brick in brick_hits:
-        bricks.remove(brick)
-        brick.hit = True
-    if brick_hits:
-        ball.vel.y *= -1
+    for ball in balls:
+        brick_hits = pg.sprite.spritecollide(ball, bricks, False)
+        for brick in brick_hits:
+            bricks.remove(brick)
+            brick.hit = True
+        if brick_hits:
+            ball.vel.y *= -1
     # next level
     if len(bricks) == 0:
         spawn_bricks()
         ball.pos = (WIDTH/2, HEIGHT/2)
     screen.fill((0, 0, 0))
-    ball.draw_trail()
+    for ball in balls:
+        ball.draw_trail()
     all_sprites.draw(screen)
     pg.display.flip()
+    

@@ -148,8 +148,12 @@ class Arrow(pg.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.center = (WIDTH/2, HEIGHT-30)
     def update(self):
-        mpos = pg.mouse.get_pos()[0] - self.rect.centerx
-        self.angle = -math.atan2(-100, mpos)
+        #mpos = pg.mouse.get_pos()[0] - self.rect.centerx
+        #self.angle = -math.atan2(-100, mpos)
+        mposx, mposy = pg.mouse.get_pos()
+        #mposx = pg.mouse.get_pos()[0] - self.rect.centerx
+        #mposy = pg.mouse.get_pos()[1] - self.rect.centery
+        self.angle = -math.atan2(mposy-self.rect.centery, mposx-self.rect.centerx)
         self.image = pg.transform.rotozoom(self.arrow,
                        math.degrees(self.angle), 1)
         self.rect = self.image.get_rect(center=self.rect.center)

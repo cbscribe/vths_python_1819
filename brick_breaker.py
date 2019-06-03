@@ -4,10 +4,10 @@ from random import randrange
 WIDTH = 800
 HEIGHT = 600
 FPS = 60
-BALL_SIZE = 8
+BALL_SIZE = 2
 BALL_SPEED = 8
-BRICK_WIDTH = 16
-BRICK_HEIGHT = 8
+BRICK_WIDTH = 24
+BRICK_HEIGHT = 12
 PADDLE_SIZE = 100
 TRAIL_LENGTH = 25
 
@@ -92,22 +92,46 @@ ORANGE = (255, 128, 0)
 COLORS = [RED, ORANGE, YELLOW, GREEN, BLUE]
 def spawn_bricks():
     for y in range(10):
-        for x in range(42):
-            Brick(30 + x * (2 + BRICK_WIDTH), 
+        for x in range(30):
+            Brick(24 + x * (2 + BRICK_WIDTH), 
                   50 +  y * (2 + BRICK_HEIGHT), COLORS[y//2])
+
+def start_animation():
+    anim_group = bricks.copy()
+    for sprite in anim_group:
+        sprite.target = sprite.rect.y
+        sprite.rect.y -= HEIGHT
+        sprite.start_time = randrange(500)
+    start = pg.time.get_ticks()
+    while len(anim_group) > 0:
+        clock.tick(FPS)
+        for event in pg.event.get(): pass
+        for sprite in anim_group:
+            if pg.time.get_ticks() - start > sprite.start_time:
+                sprite.rect.y += (sprite.target - sprite.rect.y) * 0.15 + 1
+                if sprite.rect.y == sprite.target:
+                    anim_group.remove(sprite)
+        screen.fill((0, 0, 0))
+        all_sprites.draw(screen)
+        pg.display.flip()
 
 all_sprites = pg.sprite.Group()
 bricks = pg.sprite.Group()
 balls = pg.sprite.Group()
 spawn_bricks()
+start_animation()
 ball = Ball()
 paddle = Paddle()
+paused = True
 while True:
     clock.tick(FPS)
     for event in pg.event.get():
         if event.type == pg.QUIT: pg.quit()
         if event.type == pg.KEYDOWN and event.key == pg.K_SPACE: Ball()
-    all_sprites.update()
+        if event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE:
+            paused = not paused
+    if not paused:
+        all_sprites.update()
     # bounce ball off paddle
     for ball in balls:
         paddle_hit = pg.sprite.collide_rect(paddle, ball)
@@ -129,6 +153,7 @@ while True:
     # next level
     if len(bricks) == 0:
         spawn_bricks()
+        start_animation()
         ball.pos = (WIDTH/2, HEIGHT/2)
     screen.fill((0, 0, 0))
     for ball in balls:

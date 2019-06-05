@@ -1,15 +1,16 @@
 import pygame as pg
-from random import randrange
+from random import randrange, choice, random
 
 WIDTH = 800
 HEIGHT = 600
 FPS = 60
-BALL_SIZE = 2
+BALL_SIZE = 10
 BALL_SPEED = 8
 BRICK_WIDTH = 24
 BRICK_HEIGHT = 12
 PADDLE_SIZE = 100
 TRAIL_LENGTH = 25
+POW_CHANCE = 0.1
 
 vec2 = pg.math.Vector2
 pg.init()
@@ -66,7 +67,21 @@ class Ball(pg.sprite.Sprite):
             pg.draw.line(screen, color, next_pos, pos, int(BALL_SIZE*pct))
             next_pos = pos
 
-    
+class Pow(pg.sprite.Sprite):
+    def __init__(self, pos):
+        super().__init__(all_sprites, pows)
+        self.image = pg.Surface((16, 16)).convert_alpha()
+        self.image.fill((0, 0, 0, 0))
+        self.rect = self.image.get_rect()
+        pg.draw.circle(self.image, (255, 0, 255), (8, 8), 8)
+        self.pos = pos
+        self.rect.center = self.pos
+        self.type = "super"#choice(["slow", "multi", "grow", "super"])
+    def update(self):
+        self.pos.y += 3
+        self.rect.y = self.pos.y
+        if self.rect.top > HEIGHT: self.kill()
+
 class Brick(pg.sprite.Sprite):    
     def __init__(self, x, y, color):
         super().__init__(all_sprites, bricks)
@@ -118,12 +133,25 @@ def start_animation():
 all_sprites = pg.sprite.Group()
 bricks = pg.sprite.Group()
 balls = pg.sprite.Group()
+pows = pg.sprite.Group()
 spawn_bricks()
 start_animation()
 ball = Ball()
 paddle = Paddle()
+slow_timer = 0
+grow_timer = 0
+super_timer = 0
+super_ball = False
 paused = True
 while True:
+    if pg.time.get_ticks() - super_timer > 5000:
+        super_ball = False
+    if pg.time.get_ticks() - slow_timer > 10000:
+        BALL_SPEED = 8
+    if pg.time.get_ticks() - grow_timer > 5000:
+        paddle.image = pg.Surface((PADDLE_SIZE, 15))
+        paddle.image.fill((255, 255, 255))
+        paddle.rect = paddle.image.get_rect(center=paddle.rect.center)
     clock.tick(FPS)
     for event in pg.event.get():
         if event.type == pg.QUIT: pg.quit()
@@ -132,6 +160,24 @@ while True:
             paused = not paused
     if not paused:
         all_sprites.update()
+    # catch powerups
+    pow_hits = pg.sprite.spritecollide(paddle, pows, True)
+    for p in pow_hits:
+        if p.type == "multi":
+            Ball()
+            Ball()
+        if p.type == "slow":
+            BALL_SPEED -= 1
+            if BALL_SPEED < 1: BALL_SPEED = 1
+            slow_timer = pg.time.get_ticks()
+        if p.type == "grow":
+            grow_timer = pg.time.get_ticks()
+            paddle.image = pg.Surface((PADDLE_SIZE+25, 15))
+            paddle.image.fill((255, 255, 255))
+            paddle.rect = paddle.image.get_rect(center=paddle.rect.center)
+        if p.type == "super":
+            super_timer = pg.time.get_ticks()
+            super_ball = True
     # bounce ball off paddle
     for ball in balls:
         paddle_hit = pg.sprite.collide_rect(paddle, ball)
@@ -148,8 +194,13 @@ while True:
         for brick in brick_hits:
             bricks.remove(brick)
             brick.hit = True
+            if random() < POW_CHANCE:
+                Pow(vec2(ball.pos))
         if brick_hits:
-            ball.vel.y *= -1
+            if super_ball:
+                ball.vel.y *= 1
+            else:
+                ball.vel.y *= -1
     # next level
     if len(bricks) == 0:
         spawn_bricks()

@@ -80,7 +80,6 @@ class Board:
         bubble.row = y
         bubble.col = x
         cluster = self.find_cluster(bubble, True, True)
-        # print(cluster)
         if len(cluster) >= 3:
             for b in cluster:
                 self.bubbles[b.row][b.col] = None
@@ -148,11 +147,7 @@ class Arrow(pg.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.center = (WIDTH/2, HEIGHT-30)
     def update(self):
-        #mpos = pg.mouse.get_pos()[0] - self.rect.centerx
-        #self.angle = -math.atan2(-100, mpos)
         mposx, mposy = pg.mouse.get_pos()
-        #mposx = pg.mouse.get_pos()[0] - self.rect.centerx
-        #mposy = pg.mouse.get_pos()[1] - self.rect.centery
         self.angle = -math.atan2(mposy-self.rect.centery, mposx-self.rect.centerx)
         self.image = pg.transform.rotozoom(self.arrow,
                        math.degrees(self.angle), 1)
@@ -172,7 +167,6 @@ while True:
     clock.tick(FPS)
     for event in pg.event.get():
         if event.type == pg.QUIT: pg.quit()
-        #if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
         if event.type == pg.MOUSEBUTTONDOWN:
             Bubble(nextcolor, arrow.angle)
             nextcolor = random.choice(colors)

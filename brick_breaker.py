@@ -76,7 +76,7 @@ class Pow(pg.sprite.Sprite):
         pg.draw.circle(self.image, (255, 0, 255), (8, 8), 8)
         self.pos = pos
         self.rect.center = self.pos
-        self.type = "super"#choice(["slow", "multi", "grow", "super"])
+        self.type = choice(["slow", "multi", "grow", "super"])
     def update(self):
         self.pos.y += 3
         self.rect.y = self.pos.y
@@ -155,7 +155,7 @@ while True:
     clock.tick(FPS)
     for event in pg.event.get():
         if event.type == pg.QUIT: pg.quit()
-        if event.type == pg.KEYDOWN and event.key == pg.K_SPACE: Ball()
+        # if event.type == pg.KEYDOWN and event.key == pg.K_SPACE: Ball()
         if event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE:
             paused = not paused
     if not paused:
@@ -206,6 +206,9 @@ while True:
         spawn_bricks()
         start_animation()
         ball.pos = (WIDTH/2, HEIGHT/2)
+    # Game over
+    if len(balls) == 0:
+        pg.quit()
     screen.fill((0, 0, 0))
     for ball in balls:
         ball.draw_trail()
